@@ -1,0 +1,3 @@
+[submodule "munkres"]
+	path = munkres
+	url = https://github.com/bmc/munkres
