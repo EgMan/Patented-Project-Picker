@@ -18,6 +18,7 @@ def main():
     else:
         cprint("\nSome input data is malformed.  Please fix this before moving forward.\n"
                 "Such issues will be prefaced with \"FixMe\" in the output above.", bcolors.FAIL)
+        exit(1) 
 
 def gather_params():
     if len(sys.argv) == 3:
@@ -32,10 +33,14 @@ def gather_params():
 def compute_assignments(project_picks):
     cprint("\nCasting Hungarian magic\n", bcolors.BOLD)
     matrix = project_picks.cost_matrix
-    m = Munkres()
-    assignments = m.compute(matrix)
-    print_matrix(matrix)
-    return assignments
+    if matrix:  
+        m = Munkres()
+        assignments = m.compute(matrix)
+        print_matrix(matrix)
+        return assignments
+    else:
+        cprint("Insufficient input data.", bcolors.FAIL)
+        exit(1)
 
 def output_assignments(assignments, projects, project_picks):
     cprint("\nOutputting assignments to file", bcolors.BOLD)
