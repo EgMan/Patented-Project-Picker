@@ -33,10 +33,15 @@ def gather_params():
 def compute_assignments(project_picks):
     cprint("\nCasting Hungarian magic\n", bcolors.BOLD)
     matrix = project_picks.cost_matrix
-    if matrix:  
-        m = Munkres()
-        assignments = m.compute(matrix)
+    if matrix:
         print_matrix(matrix)
+        m = Munkres()
+
+        #TODO swap out arbitrarily large weight when this issue with munkres.DISSALLOWED is resolved:
+        # https://github.com/bmc/munkres/issues/28
+        matrix = [ [ 9999999999 if val == DISALLOWED else val for val in row ] for row in matrix ]
+
+        assignments = m.compute(matrix)
         return assignments
     else:
         cprint("Insufficient input data.", bcolors.FAIL)
@@ -48,9 +53,14 @@ def output_assignments(assignments, projects, project_picks):
     assignments_out_file = []
 
     for associateidx, vacancyidx in assignments:
+        pick = project_picks.cost_matrix[associateidx][vacancyidx]
+        if pick != DISALLOWED:
+            print_pick = f"(pick #{pick})"
+        else:
+            print_pick = "(forced assignment)"
         assignments_out_console.append([project_picks.picks_by_idx[associateidx].associate_name, "->", 
             projects.projects_by_vacancy_number[vacancyidx].name, 
-            f"(pick #{project_picks.cost_matrix[associateidx][vacancyidx]})"])
+            print_pick])
 
         assignments_out_file.append([project_picks.picks_by_idx[associateidx].associate_name, 
             project_picks.picks_by_idx[associateidx].associate_id,
@@ -64,7 +74,7 @@ def output_assignments(assignments, projects, project_picks):
     with open(out_file_name, 'w') as file:
         writer = csv.writer(file)
         writer.writerows(assignments_out_file)
-    cprint(f"\nSuccesfully wrote assignments to: {out_file_name}", bcolors.OKGREEN)
+    cprint(f"\nSuccessfully wrote assignments to: {out_file_name}", bcolors.OKGREEN)
 
 
 class ProjectDirectory:
@@ -111,7 +121,7 @@ class ProjectDirectory:
                     else:
                        vacancies = int(vacancies)
                     if all( not t for t in tech ):
-                        wrns+=cstring(f"\tWrn: (row {rowidx + 1}) Project has no tech specified.", bcolors.WARNING)
+                        wrns+=cstring(f"\tWrn: (row {rowidx + 1}) Project has no tech specified.\n", bcolors.WARNING)
                     new_project = self.Project(rowidx, name, vacancies, tech)
                     projects_by_idx.append(new_project)
                     projects_by_name[new_project.name.lower()] = new_project
