@@ -7,6 +7,7 @@ import csv
 from munkres.munkres import Munkres, print_matrix, DISALLOWED
 
 valid_data = True
+forced_assign = False
 
 def main():
     projects_loc, project_picks_loc = gather_params()
@@ -18,7 +19,13 @@ def main():
     else:
         cprint("\nSome input data is malformed.  Please fix this before moving forward.\n"
                 "Such issues will be prefaced with \"FixMe\" in the output above.", bcolors.FAIL)
-        exit(1) 
+        exit(1)
+    if forced_assign:
+        cprint(("\nWrn: A forced assignment occurred.\n"
+                "This means it was not possible to fit somebody onto any of their choices, and they had to be fit in elsewhere.\n"
+                "Please review that this assignment is okay, or ask them to list more picks.\n"
+                "Note: This can most easily be avoided by always listing all projects as a total ordering of preferences for each associate."
+               ), bcolors.WARNING)
 
 def gather_params():
     if len(sys.argv) == 3:
@@ -48,6 +55,7 @@ def compute_assignments(project_picks):
         exit(1)
 
 def output_assignments(assignments, projects, project_picks):
+    global forced_assign
     cprint("\nOutputting assignments to file", bcolors.BOLD)
     assignments_out_console = []
     assignments_out_file = []
@@ -58,6 +66,7 @@ def output_assignments(assignments, projects, project_picks):
             print_pick = f"(pick #{pick})"
         else:
             print_pick = "(forced assignment)"
+            forced_assign = True
         assignments_out_console.append([project_picks.picks_by_idx[associateidx].associate_name, "->", 
             projects.projects_by_vacancy_number[vacancyidx].name, 
             print_pick])
